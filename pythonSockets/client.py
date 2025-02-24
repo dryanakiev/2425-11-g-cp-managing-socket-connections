@@ -1,14 +1,41 @@
 import socket
+import threading
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('localhost', 9999))
+class Client:
+    def __init__(self):
+        self.client_socket = None
+        self.server_address = '127.0.0.1'
+        self.server_port = 9999
 
-if client_socket:
-    print('Connection established!')
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.connect((self.server_address,self.server_port))
 
-while True:
-    outgoing_message = input('Enter your message: ')
+        if self.client_socket:
+            print(f'Connection established to {self.server_address} {self.server_port}')
 
-    client_socket.send(outgoing_message.encode())
+        self.handle_server()
 
-    print(f'Server received: {client_socket.recv(1024).decode()}')
+    def handle_server(self):
+
+        print(self.receive_message())
+
+        send_thread = threading.Thread(target=self.send_message())
+        receive_thread = threading.Thread(target=self.receive_message())
+
+        send_thread.start()
+        receive_thread.start()
+        send_thread.join()
+        receive_thread.join()
+
+
+    def receive_message(self):
+        while True:
+            received_message = self.client_socket.recv(1024)
+            print(received_message.decode())
+
+    def send_message(self):
+        while True:
+            message_to_send = input('Enter your message: ')
+            self.client_socket.send(message_to_send.encode())
+
+client = Client()
