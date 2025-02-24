@@ -1,14 +1,12 @@
 import socket
 import threading
 
-
 class Server:
 
     def __init__(self):
-        self.client_socket = None
         self.server_address = '127.0.0.1'
-        self.client_address = str
         self.server_port = 9999
+        self.clients = []
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.server_address, self.server_port))
@@ -20,31 +18,47 @@ class Server:
             print('Server failed to start...')
             return
 
-        self.handle_client()
+        self.accept_clients()
 
-    def handle_client(self):
-
-        self.accept_client()
-        self.send_message("Welcome to our server!")
-
-        receive_thread = threading.Thread(target=self.receive_message())
-
-        receive_thread.start()
-        receive_thread.join()
-
-    def accept_client(self):
-        self.client_socket, client_address = self.server_socket.accept()
-
-        print(f'Client connected: {self.client_address}')
-
-    def receive_message(self):
+    def accept_clients(self):
         while True:
-            received_message = self.client_socket.recv(1024)
-            print(received_message.decode())
+            client_socket, client_address = self.server_socket.accept()
+            self.clients.append(client_socket)
+            print(f'Client connected: {client_address}')
 
-    def send_message(self, message):
+            # Send welcome message
+            client_socket.send("Welcome to our server!".encode())
+
+            # Start a thread for each client
+            client_thread = threading.Thread(target=self.handle_client, args=(client_socket, client_address))
+            client_thread.start()
+
+    def handle_client(self, client_socket, client_address):
         while True:
-            self.client_socket.send(message.encode())
+            try:
+                received_message = client_socket.recv(1024)
+                if received_message:
+                    message = received_message.decode()
+                    print(f'Message from {client_address}: {message}')
+                    self.broadcast(message, client_socket, client_address)
+                else:
+                    print(f'Client {client_address} disconnected.')
+                    self.clients.remove(client_socket)
+                    client_socket.close()
+                    break
+            except:
+                print(f'Error with client {client_address}')
+                self.clients.remove(client_socket)
+                client_socket.close()
+                break
 
+    def broadcast(self, message, sender_socket, sender_address):
+        for client in self.clients:
+            if client != sender_socket:
+                try:
+                    client.send(f'{sender_address} sent: {message}'.encode())
+                except:
+                    self.clients.remove(client)
+                    client.close()
 
 server = Server()
