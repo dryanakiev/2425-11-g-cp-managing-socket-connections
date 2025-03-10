@@ -4,7 +4,7 @@ import threading
 class Server:
 
     def __init__(self):
-        self.server_address = '127.0.0.1'
+        self.server_address = 'localhost'
         self.server_port = 9999
         self.clients = []
 
