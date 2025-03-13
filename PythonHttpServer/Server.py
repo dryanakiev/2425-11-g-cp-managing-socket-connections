@@ -16,7 +16,7 @@ while True:
         client_connection.close()
         continue
 
-    print(f"Request received:\n{request}")
+    # print(f"Request received:\n{request}")
 
     request_lines = request.split("\n")
 
@@ -49,6 +49,12 @@ while True:
         file_name = path.lstrip("/")
         directory = "./"
         content_type = "text/css"
+
+    elif path.startswith("/favicon"):
+        file_name = path.lstrip("/")
+        directory = "./"
+        content_type = "image/x-icon"
+
     else:
         file_name = None
 
